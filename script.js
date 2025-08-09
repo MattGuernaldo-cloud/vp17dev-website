@@ -1,5 +1,7 @@
 // Firebase imports
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-app.js";
+import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-app.js";
+
+
 import {
   getFirestore, collection, doc, getDoc, getDocs, setDoc
 } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-firestore.js";
@@ -16,7 +18,7 @@ const firebaseConfig = {
 };
 
 // Init Firebase
-const app = initializeApp(firebaseConfig);
+const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 const subjects = [

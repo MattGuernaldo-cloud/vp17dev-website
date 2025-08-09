@@ -1,3 +1,24 @@
+// Firebase imports
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-app.js";
+import {
+  getFirestore, collection, doc, getDoc, getDocs, setDoc
+} from "https://www.gstatic.com/firebasejs/10.0.0/firebase-firestore.js";
+
+// Firebase config
+const firebaseConfig = {
+  apiKey: "AIzaSyAP41MMOtk6MyQ4ZS0CqJYP0W9ZJn_l0FY",
+  authDomain: "cmdiesearch.firebaseapp.com",
+  projectId: "cmdiesearch",
+  storageBucket: "cmdiesearch.appspot.com",
+  messagingSenderId: "911853594551",
+  appId: "1:911853594551:web:f05695ef898ee13c786a32",
+  measurementId: "G-SG7E1CJPTS"
+};
+
+// Init Firebase
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
 const subjects = [
   "Research in Daily Life 2:",
   "Introduction to the Philosophy of Human Person:",
@@ -14,8 +35,24 @@ function generateEmptyLAS() {
   return subjects.map(() => Array(10).fill(false));
 }
 
-function saveAccounts() {
-  localStorage.setItem("accounts", JSON.stringify(accounts));
+// 🔥 FIREBASE CHANGES: Save all accounts to Firestore
+async function saveAccountsToFirestore() {
+  for (let acc of accounts) {
+    const docRef = doc(db, "accounts", acc.id);
+    await setDoc(docRef, acc); // overwrites or creates
+  }
+}
+
+// 🔥 FIREBASE CHANGES: Save a single account to Firestore
+async function saveAccountToFirestore(account) {
+  const docRef = doc(db, "accounts", account.id);
+  await setDoc(docRef, account);
+}
+
+// 🔥 FIREBASE CHANGES: Load accounts from Firestore
+async function loadAccountsFromFirestore() {
+  const querySnapshot = await getDocs(collection(db, "accounts"));
+  accounts = querySnapshot.docs.map(doc => doc.data());
 }
 
 function logout() {
@@ -57,86 +94,111 @@ const defaultAccounts = [
 ];
 
 // ===== Load Accounts =====
-let storedAccounts = JSON.parse(localStorage.getItem("accounts"));
-let accounts;
+let accounts = [];
 
-if (!storedAccounts || !storedAccounts.some(a => ["Indonesia", "Myanmar", "Cambodia"].includes(a.section))) {
-  accounts = defaultAccounts;
-  saveAccounts();
-} else {
-  accounts = storedAccounts;
-}
+(async function initialize() {
+  await loadAccountsFromFirestore();
+
+  // If no accounts found in Firestore, populate with default and save
+  if (accounts.length === 0) {
+    accounts = defaultAccounts;
+    await saveAccountsToFirestore();
+  }
+
+  // Now that accounts are loaded, setup event listeners:
+  setupLogin();
+  setupCreateAccount();
+})();
 
 // ===== Login Event =====
-document.getElementById("loginForm").addEventListener("submit", function (e) {
-  e.preventDefault();
-  let id = document.getElementById("userID").value.trim();
-  let pass = document.getElementById("password").value.trim();
-  let user = accounts.find(acc => acc.id === id && acc.password === pass);
+function setupLogin() {
+  document.getElementById("loginForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    let id = document.getElementById("userID").value.trim();
+    let pass = document.getElementById("password").value.trim();
+    let user = accounts.find(acc => acc.id === id && acc.password === pass);
 
-  if (user) {
-    user.role === "student" ? showStudentView(user) : showTeacherView(user);
-  } else {
-    alert("Invalid ID or Password");
-  }
-});
-
-// ===== Create Account =====
-document.getElementById("createAccountBtn").addEventListener("click", function () {
-  document.body.innerHTML = `
-    <div class="create-account-container">
-      <h2>Create New Account</h2>
-      <label>Full Name</label>
-      <input type="text" id="newName" placeholder="Enter full name" required>
-      <label>ID</label>
-      <input type="text" id="newID" placeholder="Enter ID" required>
-      <label>Password</label>
-      <input type="password" id="newPass" placeholder="Enter password" required>
-      <label>Role</label>
-      <select id="newRole" required>
-        <option value="">-- Select Role --</option>
-        <option value="student">Student</option>
-        <option value="teacher">Teacher</option>
-      </select>
-      <div id="sectionField" style="display:none;">
-        <label>Section</label>
-        <select id="newSection">
-          <option value="Indonesia">Indonesia</option>
-          <option value="Myanmar">Myanmar</option>
-          <option value="Cambodia">Cambodia</option>
-        </select>
-      </div>
-      <button class="save-btn" id="saveAccountBtn">Save Account</button>
-      <button class="cancel-btn" onclick="location.reload()">Cancel</button>
-    </div>
-  `;
-
-  document.getElementById("newRole").addEventListener("change", function () {
-    document.getElementById("sectionField").style.display = this.value === "student" ? "block" : "none";
-  });
-
-  document.getElementById("saveAccountBtn").addEventListener("click", function () {
-    let name = document.getElementById("newName").value.trim();
-    let id = document.getElementById("newID").value.trim();
-    let pass = document.getElementById("newPass").value.trim();
-    let role = document.getElementById("newRole").value;
-    let section = role === "student" ? document.getElementById("newSection").value : "";
-
-    if (name && id && pass && role) {
-      let newAccount = { id, password: pass, role, name };
-      if (role === "student") {
-        newAccount.section = section;
-        newAccount.lasStatus = generateEmptyLAS();
-      }
-      accounts.push(newAccount);
-      saveAccounts();
-      alert("Account created successfully!");
-      location.reload();
+    if (user) {
+      user.role === "student" ? showStudentView(user) : showTeacherView(user);
     } else {
-      alert("Please fill in all fields.");
+      alert("Invalid ID or Password");
     }
   });
-});
+}
+
+// ===== Create Account =====
+function setupCreateAccount() {
+  document.getElementById("createAccountBtn").addEventListener("click", function () {
+    // Step 1: Render the Create Account form
+    document.body.innerHTML = `
+      <div class="create-account-container">
+        <h2>Create New Account</h2>
+        <label>Full Name</label>
+        <input type="text" id="newName" placeholder="Enter full name" required>
+        <label>ID</label>
+        <input type="text" id="newID" placeholder="Enter ID" required>
+        <label>Password</label>
+        <input type="password" id="newPass" placeholder="Enter password" required>
+        <label>Role</label>
+        <select id="newRole" required>
+          <option value="">-- Select Role --</option>
+          <option value="student">Student</option>
+          <option value="teacher">Teacher</option>
+        </select>
+        <div id="sectionField" style="display:none;">
+          <label>Section</label>
+          <select id="newSection">
+            <option value="Indonesia">Indonesia</option>
+            <option value="Myanmar">Myanmar</option>
+            <option value="Cambodia">Cambodia</option>
+          </select>
+        </div>
+        <button class="save-btn" id="saveAccountBtn">Save Account</button>
+        <button class="cancel-btn" onclick="location.reload()">Cancel</button>
+      </div>
+    `;
+
+    // Step 2: Show/Hide Section dropdown depending on Role selected
+    document.getElementById("newRole").addEventListener("change", function () {
+      document.getElementById("sectionField").style.display = this.value === "student" ? "block" : "none";
+    });
+
+    // Step 3: When clicking 'Save Account' button
+    document.getElementById("saveAccountBtn").addEventListener("click", async function () {
+      // Step 3.1: Get form values
+      let name = document.getElementById("newName").value.trim();
+      let id = document.getElementById("newID").value.trim();
+      let pass = document.getElementById("newPass").value.trim();
+      let role = document.getElementById("newRole").value;
+      let section = role === "student" ? document.getElementById("newSection").value : "";
+
+      // Step 3.2: Validate all required fields are filled
+      if (name && id && pass && role) {
+        // Step 3.3: Create new account object
+        let newAccount = { id, password: pass, role, name };
+
+        // Step 3.4: If student, add section and initialize LAS status
+        if (role === "student") {
+          newAccount.section = section;
+          newAccount.lasStatus = generateEmptyLAS();
+        }
+
+        // 🔥 FIREBASE CHANGES: Add new account to array and Firestore
+        accounts.push(newAccount);
+        await saveAccountToFirestore(newAccount);
+
+        // Step 3.5: Show success alert
+        alert("Account created successfully!");
+
+        // Step 3.6: Reload page (or redirect as needed)
+        location.reload();
+      } else {
+        // Step 3.7: If validation failed, alert user
+        alert("Please fill in all fields.");
+      }
+    });
+  });
+}
 
 // ===== Student View =====
 function showStudentView(user) {
@@ -144,8 +206,7 @@ function showStudentView(user) {
     let checkboxes = user.lasStatus[subjIndex]
       .map((done, lasIndex) => `
         <label style="margin: 0 8px 5px 0;">
-        <input type="checkbox" class="student-checkbox" ${done ? "checked" : ""} onclick="return false;">
-
+          <input type="checkbox" class="student-checkbox" ${done ? "checked" : ""} onclick="return false;">
           LAS ${lasIndex + 1}
         </label>
       `).join("");
@@ -166,7 +227,6 @@ function showStudentView(user) {
     </div>
   `;
 }
-
 
 // ===== Teacher View =====
 function showTeacherView(user) {
@@ -235,19 +295,18 @@ function showTeacherView(user) {
 
     saveBtn.style.display = "inline-block";
 
-    saveBtn.onclick = () => {
+    saveBtn.onclick = async () => {
       let checkboxes = lasForm.querySelectorAll("input[type='checkbox']");
       checkboxes.forEach(cb => {
         let subj = cb.getAttribute("data-subj");
         let las = cb.getAttribute("data-las");
         selectedStudent.lasStatus[subj][las] = cb.checked;
-
-                selectedStudent.lasStatus[subj][las] = cb.checked;
       });
 
-      saveAccounts();
+      // 🔥 FIREBASE CHANGES: Save updated student to Firestore
+      await saveAccountToFirestore(selectedStudent);
+
       alert("LAS status updated!");
     };
   });
 }
-

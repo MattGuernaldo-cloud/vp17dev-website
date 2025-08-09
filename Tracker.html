@@ -22,6 +22,33 @@
       </form>
     </div>
   </div>
-  <script src="script.js"></script>
+
+  <!-- Firebase App + Firestore SDK -->
+  <script type="module">
+    // Import Firebase SDKs
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-app.js";
+    import { getFirestore } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-firestore.js";
+
+    // Your Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyAP41MMOtk6MyQ4ZS0CqJYP0W9ZJn_l0FY",
+      authDomain: "cmdiesearch.firebaseapp.com",
+      projectId: "cmdiesearch",
+      storageBucket: "cmdiesearch.appspot.com",
+      messagingSenderId: "911853594551",
+      appId: "1:911853594551:web:f05695ef898ee13c786a32"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // Make Firebase available globally (optional)
+    window.firebaseApp = app;
+    window.firebaseDB = db;
+  </script>
+
+  <!-- Your own script.js logic (must also be type="module" if it imports Firebase) -->
+  <script type="module" src="script.js"></script>
 </body>
 </html>

@@ -1,54 +1,23 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>LAS Tracker</title>
-  <link rel="stylesheet" href="styles.css" />
+  <title>Login System</title>
 </head>
 <body>
-  <div class="container">
-    <div class="left-section">
-      <h1 class="logo">CMDI eSearch</h1>
-    </div>
-    <div class="right-section">
-      <form class="login-box" id="loginForm">
-        <input type="text" id="userID" placeholder="Student/Teacher ID" required />
-        <input type="password" id="password" placeholder="Password" required />
-        <button type="submit" class="login-btn">Log In</button>
-        <a href="#" class="forgot-link">Forgot password?</a>
-        <hr />
-        <button type="button" class="create-btn" id="createAccountBtn">Create new account</button>
-      </form>
-    </div>
-  </div>
+  <h2>Register</h2>
+  <form id="registerForm">
+    <input type="email" id="regEmail" placeholder="Email" required>
+    <input type="password" id="regPassword" placeholder="Password" required>
+    <button type="submit">Register</button>
+  </form>
 
-  <!-- Firebase App + Firestore SDK -->
-  <script type="module">
-    // Import Firebase SDKs
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-app.js";
-    import { getFirestore } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-firestore.js";
+  <h2>Login</h2>
+  <form id="loginForm">
+    <input type="email" id="loginEmail" placeholder="Email" required>
+    <input type="password" id="loginPassword" placeholder="Password" required>
+    <button type="submit">Login</button>
+  </form>
 
-    // Your Firebase configuration
-    const firebaseConfig = {
-      apiKey: "AIzaSyAP41MMOtk6MyQ4ZS0CqJYP0W9ZJn_l0FY",
-      authDomain: "cmdiesearch.firebaseapp.com",
-      projectId: "cmdiesearch",
-      storageBucket: "cmdiesearch.appspot.com",
-      messagingSenderId: "911853594551",
-      appId: "1:911853594551:web:f05695ef898ee13c786a32"
-    };
-
-    // Initialize Firebase
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-
-    // Make Firebase available globally (optional)
-    window.firebaseApp = app;
-    window.firebaseDB = db;
-  </script>
-
-  <!-- Your own script.js logic (must also be type="module" if it imports Firebase) -->
-  <script type="module" src="script.js"></script>
+  <script type="module" src="auth.js"></script>
 </body>
 </html>
